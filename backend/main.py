@@ -14,4 +14,3 @@ app.include_router(financial_goal_router, prefix="/financial", tags=["Financial 
 @app.get("/")
 def home():
     return {"message": "Welcome to Summit Planner API 🚀"}
-
