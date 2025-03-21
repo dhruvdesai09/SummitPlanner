@@ -1,33 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from ..database import get_db
 from ..models import User, Profile
 
-router = APIRouter()
+router = APIRouter(prefix="/profile", tags=["Profile"])
 
 # Profile Request Model
 class ProfileUpdateRequest(BaseModel):
-    full_name: str
-    phone: str
-    address: str
+    full_name: str = Field(..., example="John Doe")
+    phone: str = Field(..., example="+1234567890")
+    address: str = Field(..., example="123 Main Street, NY")
 
 # Fetch user profile
-@router.get("/profile/{user_id}")
+@router.get("/{user_id}", response_model=ProfileUpdateRequest)
 def get_profile(user_id: int, db: Session = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.user_id == user_id).first()
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-
-    return {
-        "user_id": profile.user_id,
-        "full_name": profile.full_name,
-        "phone": profile.phone,
-        "address": profile.address
-    }
+    return profile
 
 # Create or update user profile
-@router.put("/profile/{user_id}")
+@router.put("/{user_id}")
 def update_profile(user_id: int, request: ProfileUpdateRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -35,22 +29,18 @@ def update_profile(user_id: int, request: ProfileUpdateRequest, db: Session = De
 
     profile = db.query(Profile).filter(Profile.user_id == user_id).first()
     if not profile:
-        # Create profile if it doesn't exist
-        profile = Profile(user_id=user_id, full_name=request.full_name, phone=request.phone, address=request.address)
+        profile = Profile(user_id=user_id, **request.dict())
         db.add(profile)
     else:
-        # Update profile if it exists
-        profile.full_name = request.full_name
-        profile.phone = request.phone
-        profile.address = request.address
+        for key, value in request.dict().items():
+            setattr(profile, key, value)
 
     db.commit()
     db.refresh(profile)
-
-    return {"message": "Profile updated successfully"}
+    return {"message": "Profile updated successfully", "profile": profile}
 
 # Delete user profile
-@router.delete("/profile/{user_id}")
+@router.delete("/{user_id}")
 def delete_profile(user_id: int, db: Session = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.user_id == user_id).first()
     if not profile:
@@ -58,5 +48,4 @@ def delete_profile(user_id: int, db: Session = Depends(get_db)):
 
     db.delete(profile)
     db.commit()
-
     return {"message": "Profile deleted successfully"}

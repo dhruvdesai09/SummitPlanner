@@ -1,28 +1,39 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Float, DateTime
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from .database import Base
 
-# User Model
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, nullable=False)
-    email = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
 
-    # Establish one-to-one relationship with Profile
-    profile = relationship("Profile", uselist=False, back_populates="user", cascade="all, delete-orphan")
+    profile = relationship("Profile", back_populates="user", uselist=False)
+    financial_goals = relationship("FinancialGoal", back_populates="user")
 
-# Profile Model
 class Profile(Base):
     __tablename__ = "profiles"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
-    full_name = Column(String, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    full_name = Column(String, nullable=False)
     phone = Column(String, nullable=True)
     address = Column(String, nullable=True)
 
-    # Establish relationship with User
     user = relationship("User", back_populates="profile")
+
+class FinancialGoal(Base):
+    __tablename__ = "financial_goals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    goal_name = Column(String, nullable=False)
+    goal_type = Column(Enum("savings", "investment", name="goal_type_enum"), nullable=False)
+    target_amount = Column(Float, nullable=False)
+    current_amount = Column(Float, default=0.0)
+    start_date = Column(DateTime, default=datetime.utcnow)
+    end_date = Column(DateTime, nullable=False)
+
+    user = relationship("User", back_populates="financial_goals")
