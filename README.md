@@ -1,6 +1,6 @@
 # summit_planner
 
-A new Flutter project, with a backend using PostgreSQL
+A new Flutter project, with a backend using PostgreSQL.
 
 ## Getting Started
 
