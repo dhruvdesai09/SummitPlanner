@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'signup_screen.dart';
-import '../services/api_service.dart';
+import 'signup_screen.dart'; // Import Signup Screen
+import 'profile_screen.dart'; // Import Home Screen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,20 +18,23 @@ class _LoginScreenState extends State<LoginScreen> {
     String password = _passwordController.text.trim();
 
     if (email.isNotEmpty && password.isNotEmpty) {
-      var response = await ApiService.login(email, password);
-      if (response['access_token'] != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login Successful!')),
+      // Simulate API call (replace with actual authentication logic)
+      bool loginSuccess = true; // Change this based on actual API response
+
+      if (loginSuccess) {
+        // Navigate to Home Screen after successful login
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
-        // Navigate to Home Screen (to be implemented)
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['detail'] ?? 'Login failed!')),
+          const SnackBar(content: Text('Invalid credentials! Try again.')),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill all fields!')),
+        const SnackBar(content: Text('Please fill all fields!')),
       );
     }
   }
@@ -39,55 +42,35 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text("Login")),
       body: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 🔹 App Branding
-            Text("Summit Planner", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text("Your Financial Wellness Partner", style: TextStyle(fontSize: 16, color: Colors.grey)),
-            SizedBox(height: 40),
-
-            // 🔹 Email Input
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(
-                labelText: "Email",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+              decoration: const InputDecoration(labelText: "Email"),
             ),
-            SizedBox(height: 15),
-
-            // 🔹 Password Input
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: "Password",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+              decoration: const InputDecoration(labelText: "Password"),
               obscureText: true,
             ),
-            SizedBox(height: 20),
-
-            // 🔹 Login Button
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _login,
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-              ),
-              child: Text("Login", style: TextStyle(fontSize: 18)),
+              child: const Text("Login"),
             ),
-            SizedBox(height: 20),
-
-            // 🔹 Navigation to Signup
+            const SizedBox(height: 10),
             TextButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => SignupScreen()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SignupScreen()),
+                );
               },
-              child: Text("Don't have an account? Sign up", style: TextStyle(fontSize: 16)),
+              child: const Text("Don't have an account? Sign Up"),
             ),
           ],
         ),
