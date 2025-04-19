@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'signup_screen.dart'; // Import Signup Screen
-import 'profile_screen.dart'; // Import Home Screen
+import 'signup_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,14 +18,13 @@ class _LoginScreenState extends State<LoginScreen> {
     String password = _passwordController.text.trim();
 
     if (email.isNotEmpty && password.isNotEmpty) {
-      // Simulate API call (replace with actual authentication logic)
-      bool loginSuccess = true; // Change this based on actual API response
+      // Simulate successful login
+      bool loginSuccess = true;
 
       if (loginSuccess) {
-        // Navigate to Home Screen after successful login
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => HomeScreen(email: email)),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

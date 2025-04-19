@@ -1,143 +1,90 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class ProfileScreen extends StatefulWidget {
+  final String email; // Pass email from home screen
+
+  const ProfileScreen({super.key, required this.email});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+  String fullName = '';
+  String incomeLevel = '';
+  String currency = '';
+
+  Future<void> updateProfile() async {
+    // First fetch user ID from email
+    final userResponse = await http.get(
+      Uri.parse('http://your-backend-url/api/userid/${widget.email}'),
+    );
+
+    if (userResponse.statusCode == 200) {
+      final userId = int.parse(userResponse.body); // assuming backend returns plain id
+
+      final profileResponse = await http.post(
+        Uri.parse('http://your-backend-url/api/updateprofile'),
+        body: {
+          'user_id': userId.toString(),
+          'full_name': fullName,
+          'income_level': incomeLevel,
+          'currency': currency,
+        },
+      );
+
+      if (profileResponse.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Profile updated successfully")),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to update profile")),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to retrieve user ID")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200], // Light background
-      appBar: AppBar(
-        title: const Text("Summit Planner"),
-        backgroundColor: Colors.blue[800],
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              // Notification click action
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text("Update Profile")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            financialSummaryCard(),
-            const SizedBox(height: 10),
-            budgetInsightsCard(),
-            const SizedBox(height: 10),
-            microInvestmentCard(),
-            const SizedBox(height: 10),
-            emergencyFundCard(),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                decoration: const InputDecoration(labelText: "Full Name"),
+                onChanged: (value) => fullName = value,
+              ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: "Income Level"),
+                onChanged: (value) => incomeLevel = value,
+              ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: "Preferred Currency"),
+                onChanged: (value) => currency = value,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    updateProfile();
+                  }
+                },
+                child: const Text("Save Profile"),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget financialSummaryCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Financial Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            const Text("₹XXXX", style: TextStyle(fontSize: 24, color: Colors.green, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text("Available: ₹X"),
-                Text("Income: ₹Y"),
-              ],
-            ),
-            const SizedBox(height: 10),
-            LinearProgressIndicator(
-              value: 0.7,
-              backgroundColor: Colors.grey[300],
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
-            ),
-            const SizedBox(height: 5),
-            const Text("Progress Bar: Emergency Fund", style: TextStyle(fontSize: 14, color: Colors.grey)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget budgetInsightsCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Budget Insights", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            budgetItem(Icons.restaurant, "Food: 25%", Colors.orange),
-            budgetItem(Icons.directions_car, "Travel: 15%", Colors.purple),
-            budgetItem(Icons.warning, "Cut ₹500 from Subscriptions", Colors.red),
-            budgetItem(Icons.calendar_today, "Upcoming Bills: ₹Y on March 30", Colors.blue),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget microInvestmentCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Micro-investment Plan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            budgetItem(Icons.monetization_on, "FD (6%)", Colors.green),
-            budgetItem(Icons.show_chart, "Mutual Funds", Colors.blue),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget emergencyFundCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Emergency Fund", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            budgetItem(Icons.rocket, "Save ₹Z per month to reach goal", Colors.orange),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget budgetItem(IconData icon, String text, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(width: 10),
-          Text(text, style: TextStyle(fontSize: 16, color: color)),
-        ],
       ),
     );
   }
