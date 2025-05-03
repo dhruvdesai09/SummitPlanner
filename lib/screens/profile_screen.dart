@@ -10,7 +10,7 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> { 
   final _formKey = GlobalKey<FormState>();
   String fullName = '';
   String incomeLevel = '';
