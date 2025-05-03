@@ -1,15 +1,51 @@
 import 'package:flutter/material.dart';
-import 'financial_summary_screen.dart';
-import 'budget_insights_screen.dart';
-import 'micro_investment_screen.dart';
-import 'emergency_fund_screen.dart';
-import 'notification_screen.dart';
-import 'profile_screen.dart';
-import 'chatbot_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+// Replace this with your actual API endpoint
+const String apiUrl = "http://10.0.2.2:5000/api/home-summary";
+
+class HomeData {
+  final double available;
+  final double income;
+  final double emergencyFundProgress;
+  final List<Map<String, dynamic>> budgetItems;
+  final List<Map<String, dynamic>> investments;
+  final String emergencyTip;
+
+  HomeData({
+    required this.available,
+    required this.income,
+    required this.emergencyFundProgress,
+    required this.budgetItems,
+    required this.investments,
+    required this.emergencyTip,
+  });
+
+  factory HomeData.fromJson(Map<String, dynamic> json) {
+    return HomeData(
+      available: json['available'],
+      income: json['income'],
+      emergencyFundProgress: json['emergencyFundProgress'],
+      budgetItems: List<Map<String, dynamic>>.from(json['budgetItems']),
+      investments: List<Map<String, dynamic>>.from(json['investments']),
+      emergencyTip: json['emergencyTip'],
+    );
+  }
+}
 
 class HomeScreen extends StatelessWidget {
   final String email;
   const HomeScreen({super.key, required this.email});
+
+  Future<HomeData> fetchHomeData() async {
+    final response = await http.get(Uri.parse('$apiUrl?email=$email'));
+    if (response.statusCode == 200) {
+      return HomeData.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception("Failed to load home data");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,86 +58,62 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationScreen()),
-              );
+              Navigator.pushNamed(context, '/notifications');
             },
           ),
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProfileScreen(email: email)),
-              );
+              Navigator.pushNamed(context, '/profile', arguments: email);
             },
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const FinancialSummaryScreen()),
-                  ),
-                  child: financialSummaryCard(),
+      body: FutureBuilder<HomeData>(
+        future: fetchHomeData(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          final data = snapshot.data!;
+          return Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ListView(
+                  children: [
+                    financialSummaryCard(data.available, data.income, data.emergencyFundProgress),
+                    const SizedBox(height: 10),
+                    budgetInsightsCard(data.budgetItems),
+                    const SizedBox(height: 10),
+                    microInvestmentCard(data.investments),
+                    const SizedBox(height: 10),
+                    emergencyFundCard(data.emergencyTip),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const BudgetInsightsScreen()),
-                  ),
-                  child: budgetInsightsCard(),
+              ),
+              Positioned(
+                bottom: 20,
+                right: 20,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/chatbot');
+                  },
+                  backgroundColor: Colors.blue,
+                  child: const Icon(Icons.chat_bubble_outline),
                 ),
-                const SizedBox(height: 10),
-                InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MicroInvestmentScreen()),
-                  ),
-                  child: microInvestmentCard(),
-                ),
-                const SizedBox(height: 10),
-                InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const EmergencyFundScreen()),
-                  ),
-                  child: emergencyFundCard(),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 20,
-            right: 20,
-            child: FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ChatbotScreen()),
-                );
-              },
-              backgroundColor: Colors.blue,
-              child: const Icon(Icons.chat_bubble_outline),
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // ---------------- Card Widgets ----------------
-
-  Widget financialSummaryCard() {
+  Widget financialSummaryCard(double available, double income, double progress) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
@@ -112,18 +124,18 @@ class HomeScreen extends StatelessWidget {
           children: [
             const Text("Financial Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            const Text("₹XXXX", style: TextStyle(fontSize: 24, color: Colors.green, fontWeight: FontWeight.bold)),
+            Text("₹${available.toStringAsFixed(2)}", style: const TextStyle(fontSize: 24, color: Colors.green, fontWeight: FontWeight.bold)),
             const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text("Available: ₹X"),
-                Text("Income: ₹Y"),
+              children: [
+                Text("Available: ₹${available.toStringAsFixed(0)}"),
+                Text("Income: ₹${income.toStringAsFixed(0)}"),
               ],
             ),
             const SizedBox(height: 10),
             LinearProgressIndicator(
-              value: 0.7,
+              value: progress,
               backgroundColor: Colors.grey[300],
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
             ),
@@ -135,7 +147,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget budgetInsightsCard() {
+  Widget budgetInsightsCard(List<Map<String, dynamic>> items) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
@@ -146,17 +158,14 @@ class HomeScreen extends StatelessWidget {
           children: [
             const Text("Budget Insights", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            budgetItem(Icons.restaurant, "Food: 25%", Colors.orange),
-            budgetItem(Icons.directions_car, "Travel: 15%", Colors.purple),
-            budgetItem(Icons.warning, "Cut ₹500 from Subscriptions", Colors.red),
-            budgetItem(Icons.calendar_today, "Upcoming Bills: ₹Y on March 30", Colors.blue),
+            ...items.map((item) => budgetItem(item['icon'], item['text'], Color(int.parse(item['color'])))),
           ],
         ),
       ),
     );
   }
 
-  Widget microInvestmentCard() {
+  Widget microInvestmentCard(List<Map<String, dynamic>> investments) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
@@ -167,15 +176,14 @@ class HomeScreen extends StatelessWidget {
           children: [
             const Text("Micro-investment Plan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            budgetItem(Icons.monetization_on, "FD (6%)", Colors.green),
-            budgetItem(Icons.show_chart, "Mutual Funds", Colors.blue),
+            ...investments.map((inv) => budgetItem(inv['icon'], inv['text'], Color(int.parse(inv['color'])))),
           ],
         ),
       ),
     );
   }
 
-  Widget emergencyFundCard() {
+  Widget emergencyFundCard(String tip) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
@@ -186,19 +194,19 @@ class HomeScreen extends StatelessWidget {
           children: [
             const Text("Emergency Fund", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            budgetItem(Icons.rocket, "Save ₹Z per month to reach goal", Colors.orange),
+            budgetItem(Icons.rocket, tip, Colors.orange),
           ],
         ),
       ),
     );
   }
 
-  Widget budgetItem(IconData icon, String text, Color color) {
+  Widget budgetItem(dynamic icon, String text, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 24),
+          Icon(icon is IconData ? icon : Icons.info, color: color, size: 24),
           const SizedBox(width: 10),
           Text(text, style: TextStyle(fontSize: 16, color: color)),
         ],

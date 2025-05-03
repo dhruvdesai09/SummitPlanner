@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ProfileScreen extends StatefulWidget {
-  final String email; // Pass email from home screen
+  final String email;
 
   const ProfileScreen({super.key, required this.email});
 
@@ -10,43 +11,34 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> { 
-  final _formKey = GlobalKey<FormState>();
-  String fullName = '';
-  String incomeLevel = '';
-  String currency = '';
+class _ProfileScreenState extends State<ProfileScreen> {
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _incomeController = TextEditingController();
+  String? _selectedGender;
 
-  Future<void> updateProfile() async {
-    // First fetch user ID from email
-    final userResponse = await http.get(
-      Uri.parse('http://your-backend-url/api/userid/${widget.email}'),
+  final List<String> _genders = ['Male', 'Female', 'Other'];
+
+  Future<void> _updateProfile() async {
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:5000/api/updateprofile'), // or your local IP
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': widget.email,
+        'full_name': _fullNameController.text,
+        'dob': _dobController.text,
+        'gender': _selectedGender,
+        'income_level': _incomeController.text,
+      }),
     );
 
-    if (userResponse.statusCode == 200) {
-      final userId = int.parse(userResponse.body); // assuming backend returns plain id
-
-      final profileResponse = await http.post(
-        Uri.parse('http://your-backend-url/api/updateprofile'),
-        body: {
-          'user_id': userId.toString(),
-          'full_name': fullName,
-          'income_level': incomeLevel,
-          'currency': currency,
-        },
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully')),
       );
-
-      if (profileResponse.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile updated successfully")),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to update profile")),
-        );
-      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to retrieve user ID")),
+        const SnackBar(content: Text('Failed to update profile')),
       );
     }
   }
@@ -54,36 +46,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Update Profile")),
+      appBar: AppBar(title: const Text('Update Profile')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(labelText: "Full Name"),
-                onChanged: (value) => fullName = value,
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: "Income Level"),
-                onChanged: (value) => incomeLevel = value,
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: "Preferred Currency"),
-                onChanged: (value) => currency = value,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    updateProfile();
-                  }
-                },
-                child: const Text("Save Profile"),
-              ),
-            ],
-          ),
+        child: Column(
+          children: [
+            Text('Email: ${widget.email}'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _fullNameController,
+              decoration: const InputDecoration(labelText: 'Full Name'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _dobController,
+              decoration: const InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD)'),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedGender,
+              hint: const Text('Select Gender'),
+              items: _genders.map((String gender) {
+                return DropdownMenuItem<String>(
+                  value: gender,
+                  child: Text(gender),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedGender = value;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _incomeController,
+              decoration: const InputDecoration(labelText: 'Income Level'),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _updateProfile,
+              child: const Text('Save Profile'),
+            ),
+          ],
         ),
       ),
     );

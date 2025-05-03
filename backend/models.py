@@ -16,14 +16,15 @@ class User(Base):
 
 class Profile(Base):
     __tablename__ = "profiles"
-
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
     full_name = Column(String, nullable=False)
-    phone = Column(String, nullable=True)
-    address = Column(String, nullable=True)
+    dob = Column(String, nullable=False)
+    gender = Column(String, nullable=False)
+    income_level = Column(Integer, nullable=False)
 
     user = relationship("User", back_populates="profile")
+
 
 class FinancialGoal(Base):
     __tablename__ = "financial_goals"

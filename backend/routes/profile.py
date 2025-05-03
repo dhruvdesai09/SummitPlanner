@@ -9,8 +9,9 @@ router = APIRouter(prefix="/profile", tags=["Profile"])
 # Profile Request Model
 class ProfileUpdateRequest(BaseModel):
     full_name: str = Field(..., example="John Doe")
-    phone: str = Field(..., example="+1234567890")
-    address: str = Field(..., example="123 Main Street, NY")
+    dob: str = Field(..., example="1990-01-01")
+    gender: str = Field(..., example="Male")
+    income_level: int = Field(..., example=50000)
 
 # Fetch user profile
 @router.get("/{user_id}", response_model=ProfileUpdateRequest)
