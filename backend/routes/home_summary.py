@@ -23,7 +23,7 @@ class HomeData(BaseModel):
     emergencyTip: str
 
 # 🧠 Mock summary endpoint
-@router.get("/api/home-summary", response_model=HomeData)
+@router.get("/", response_model=HomeData)
 def get_home_summary(email: str = Query(...)):
     # ✅ Replace with DB logic later
     return {

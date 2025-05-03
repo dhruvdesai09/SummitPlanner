@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 // Replace this with your actual API endpoint
-const String apiUrl = "http://10.0.2.2:5000/api/home-summary";
+const String apiUrl = "http://10.0.2.2:8000/api/home-summary";
 
 class HomeData {
   final double available;

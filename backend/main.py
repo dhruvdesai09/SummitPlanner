@@ -21,7 +21,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(profile_router, prefix="/users", tags=["User Profile"])
 app.include_router(financial_goal_router, prefix="/financial", tags=["Financial Goals"])
-app.include_router(home_summary_router, tags=["Home Summary"])  # NEW
+app.include_router(home_summary_router, prefix="/api/home-summary", tags=["Home Summary"])  # NEW
 
 # 🌟 Root endpoint
 @app.get("/")
